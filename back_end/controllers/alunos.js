@@ -27,19 +27,23 @@ exports.createAluno = async (req, res) => {
 
 exports.updateAluno = async (req, res) => {
   try {
-    res
-      .status(201)
-      .json(await Aluno.AlunoModel.findByIdAndUpdate(req.params.id, req.body));
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
+    const { id } = req.params;
+    const { foto } = req.body;
+    const alunoExistente = await Aluno.AlunoModel.findById(id);
 
-exports.updatePhotoAluno = async (req, res) => {
-  try {
+    if (!alunoExistente) {
+      return res.status(404).json({ message: "Aluno não encontrado" });
+    }
+
+    const alunoAtualizado = await Aluno.AlunoModel.findByIdAndUpdate(
+      id,
+      { foto: foto },
+      { new: true }
+    );
+
     res
-      .status(201)
-      .json(await Aluno.AlunoModel.findByIdAndUpdate(req.params.id, req.body));
+      .status(200)
+      .json({ message: "Foto atualizada com sucesso", aluno: alunoAtualizado });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
