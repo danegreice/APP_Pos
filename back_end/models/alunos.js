@@ -10,6 +10,7 @@ const aluno = new Schema({
   nome: { type: String, required: true },
   matricula: { type: Number, required: true },
   email: { type: String, required: true },
+  foto: { type: String, default: "" },
 });
 
 const AlunoModel = mongoose.model("alunos", aluno);
