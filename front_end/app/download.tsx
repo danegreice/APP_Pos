@@ -7,9 +7,11 @@ import {
   Alert,
   ActivityIndicator,
   FlatList,
+  Platform,
 } from "react-native";
 import { useAluno } from "@/contexts/AlunoContext";
 import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import axios from "axios";
 
 const API_URL = "https://app-pos-backend.onrender.com/disciplinas";
@@ -22,7 +24,7 @@ interface Disciplina {
 }
 
 const DownloadScreen = () => {
-  const [loading, setLoading] = useState(false);
+  const [loadingItem, setLoadingItem] = useState<string | null>(null); // 🔹 Rastreia apenas um item
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const { session } = useAluno();
 
@@ -43,45 +45,69 @@ const DownloadScreen = () => {
     }
   };
 
-  //const pdfUrl =
-  //  "https://educapes.capes.gov.br/bitstream/capes/560827/2/Apostila%20-%20Curso%20de%20L%C3%B3gica%20de%20Programa%C3%A7%C3%A3o.pdf";
-
-  const downloadFile = async (pdfUrl: string) => {
-    setLoading(true);
+  const downloadFile = async (pdfUrl: string, codigo: string) => {
+    setLoadingItem(codigo); // 🔹 Ativa o loading apenas para este item
     try {
-      // Define o caminho para salvar o arquivo
-      const fileUri = `${FileSystem.documentDirectory}meu_arquivo.pdf`;
+      const filename = pdfUrl.split("/").pop();
+      if (!filename) {
+        throw new Error("Nome do arquivo inválido");
+      }
 
-      // Faz o download do arquivo
-      const { uri } = await FileSystem.downloadAsync(pdfUrl, fileUri);
+      const fileUri = `${FileSystem.documentDirectory}${filename}`;
 
-      setLoading(false);
-      Alert.alert("Download concluído!", `Arquivo salvo em: ${uri}`);
+      const dirInfo = await FileSystem.getInfoAsync(
+        FileSystem.documentDirectory!
+      );
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(FileSystem.documentDirectory!, {
+          intermediates: true,
+        });
+      }
+
+      const downloadResumable = FileSystem.createDownloadResumable(
+        pdfUrl,
+        fileUri
+      );
+      const downloadResponse = await downloadResumable.downloadAsync();
+
+      if (downloadResponse?.uri) {
+        await fileSave(downloadResponse.uri);
+      }
     } catch (error) {
-      setLoading(false);
       console.error("Erro ao baixar arquivo:", error);
       Alert.alert("Erro", "Não foi possível baixar o arquivo.");
+    } finally {
+      setLoadingItem(null); // 🔹 Desativa o loading quando terminar
     }
   };
 
-  const renderItem = ({
-    item,
-  }: {
-    item: { nome: string; files: string[] };
-  }) => {
+  const fileSave = async (uri: string) => {
+    if (Platform.OS === "android" || Platform.OS === "ios") {
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Alert.alert(
+          "Compartilhamento não disponível",
+          "Não foi possível compartilhar o arquivo."
+        );
+      }
+    }
+  };
+
+  const renderItem = ({ item }: { item: Disciplina }) => {
     return (
       <View style={styles.card}>
         <Text style={styles.title}>{item.nome} - Material</Text>
         <FlatList
           data={item.files}
           keyExtractor={(file, index) => `${index}`}
-          renderItem={({ item }) => (
+          renderItem={({ item: fileUrl }) => (
             <TouchableOpacity
               style={styles.button}
-              onPress={() => downloadFile(item)}
-              disabled={loading}
+              onPress={() => downloadFile(fileUrl, fileUrl)} // 🔹 Usa o URL como identificador
+              disabled={loadingItem === fileUrl} // 🔹 Apenas este item fica desativado
             >
-              {loading ? (
+              {loadingItem === fileUrl ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.buttonText}>Baixar</Text>
@@ -103,6 +129,7 @@ const DownloadScreen = () => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
