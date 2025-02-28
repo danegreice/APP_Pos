@@ -26,7 +26,7 @@ type RootStackParamList = {
   home: undefined;
 };
 
-const API_URL = "http://localhost:5000/alunos";
+const API_URL = "https://app-pos-backend.onrender.com/alunos";
 
 const IndexScreen = () => {
   const [matricula, setMatricula] = useState("");

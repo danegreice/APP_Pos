@@ -12,8 +12,8 @@ import { useAluno } from "@/contexts/AlunoContext";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 
-const API_DISCIPLINAS = "http://localhost:5000/disciplinas";
-const API_NOTAS = "http://localhost:5000/notas";
+const API_DISCIPLINAS = "https://app-pos-backend.onrender.com/disciplinas";
+const API_NOTAS = "https://app-pos-backend.onrender.com/notas";
 
 interface Aluno {
   _id: string;
@@ -72,7 +72,7 @@ const HistoricoScreen = () => {
     return <Text>Carregando...</Text>;
   }
 
-  const API_ALUNO = `http://localhost:5000/alunos/${session}`;
+  const API_ALUNO = `https://app-pos-backend.onrender.com/alunos/${session}`;
 
   const handleNavigate = () => {
     navigation.navigate("home");

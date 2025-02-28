@@ -10,15 +10,16 @@ var http = require("http");
 const mongoose = require("mongoose");
 
 require("dotenv").config();
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URL = process.env.MONGO_URL;
 const MONGO_HOST = process.env.MONGO_HOST;
 const MONGO_DATABASE = process.env.MONGO_DATABASE;
 
 mongoose
-  .connect(
-    "mongodb+srv://teste:teste@cluster0.ltwob.mongodb.net/iteam?retryWrites=true&w=majority&appName=Cluster0",
-    { useNewUrlParser: true, useUnifiedTopology: true }
-  )
+  .connect(MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 15000,
+  })
   .then(() => console.log("Conectado ao MongoDB com sucesso!"))
   .catch((error) => console.error("Erro ao conectar ao MongoDB:", error));
 

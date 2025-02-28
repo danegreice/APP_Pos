@@ -12,7 +12,7 @@ import { useAluno } from "@/contexts/AlunoContext";
 import * as FileSystem from "expo-file-system";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/disciplinas";
+const API_URL = "https://app-pos-backend.onrender.com/disciplinas";
 
 interface Disciplina {
   codigo: string;

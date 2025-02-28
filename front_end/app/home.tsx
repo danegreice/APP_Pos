@@ -41,7 +41,7 @@ const HomeScreen = () => {
     return <Text>Carregando...</Text>;
   }
 
-  const API_URL = `http://localhost:5000/alunos/${session}`;
+  const API_URL = `https://app-pos-backend.onrender.com/alunos/${session}`;
 
   useEffect(() => {
     fetchAluno();

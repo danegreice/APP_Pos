@@ -12,8 +12,8 @@ var notasRouter = require("./routes/notas");
 var app = express();
 
 // CORS
-app.use(cors({ origin: "http://localhost:5000" }));
-app.options("*", cors());
+//app.use(cors({ origin: "http://localhost:5000" }));
+//app.options("*", cors());
 
 app.use(cors());
 app.use(logger("dev"));
