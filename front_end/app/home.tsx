@@ -12,6 +12,8 @@ import { launchImageLibrary } from "react-native-image-picker"; // Biblioteca pa
 import { useNavigation } from "@react-navigation/native";
 import { useAluno } from "@/contexts/AlunoContext";
 import { Picker } from "@react-native-picker/picker"; // Para seleção de tela
+import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 interface Aluno {
@@ -20,7 +22,7 @@ interface Aluno {
   idade: string;
   email: string;
   matricula: string;
-  foto: string;
+  foto?: string;
 }
 
 type RootStackParamList = {
@@ -51,24 +53,50 @@ const HomeScreen = () => {
     try {
       const response = await axios.get(API_URL);
       setAluno(response.data);
+      if (response.data.foto) {
+        setPhoto(response.data.foto);
+      }
     } catch (error) {
-      console.error("Erro ao carregar alunos", error);
+      console.error("Erro ao carregar aluno:", error);
     }
   };
 
-  const selectPhoto = () => {
-    launchImageLibrary({ mediaType: "photo" }, (response) => {
-      if (response.didCancel) {
-        console.log("User canceled image picker");
-      } else if (response.errorCode) {
-        console.log("ImagePicker Error: ", response.errorMessage);
-      } else if (response.assets && response.assets.length > 0) {
-        // Verificação de 'assets'
-        setPhoto(response.assets[0]);
-      } else {
-        console.log("Nenhuma imagem foi selecionada");
-      }
+  const selectPhoto = async () => {
+    // Pedir permissão para acessar as fotos
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão necessária",
+        "Precisamos de acesso às suas fotos!"
+      );
+      return;
+    }
+
+    // Abrir a galeria
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
     });
+
+    if (!result.canceled) {
+      const selectedImage = result.assets[0].uri;
+      setPhoto(selectedImage); // Atualiza a foto selecionada
+      uploadPhoto(selectedImage);
+    }
+  };
+
+  const uploadPhoto = async (photoUri: string) => {
+    try {
+      const response = await axios.put(API_URL, { foto: photoUri });
+
+      if (response.status === 200) {
+        Alert.alert("Sucesso!", "Foto atualizada com sucesso.");
+      }
+    } catch (error) {
+      console.error("Erro ao enviar foto:", error);
+      Alert.alert("Erro", "Não foi possível enviar a foto.");
+    }
   };
 
   // Função para navegar para a tela selecionada
@@ -80,9 +108,13 @@ const HomeScreen = () => {
     }
   };
 
-  const handleExit = () => {
+  const handleExit = async () => {
     navigation.reset({ index: 0, routes: [{ name: "index" }] });
-    localStorage.clear();
+    try {
+      await AsyncStorage.removeItem("session");
+    } catch (error) {
+      console.log("Erro ao remover a sessão: ", error);
+    }
   };
 
   return (
@@ -94,7 +126,7 @@ const HomeScreen = () => {
         {/* Exibir a foto selecionada */}
         <TouchableOpacity onPress={selectPhoto}>
           {photo ? (
-            <Image source={{ uri: photo.uri }} style={styles.image} />
+            <Image source={{ uri: photo }} style={styles.image} />
           ) : (
             <Text style={styles.noImageText}>Selecione uma foto</Text>
           )}
@@ -148,6 +180,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 18,
     fontWeight: "bold",
+    width: 180,
     marginBottom: 20,
   },
   image: {

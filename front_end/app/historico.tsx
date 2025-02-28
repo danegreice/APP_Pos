@@ -81,21 +81,33 @@ const HistoricoScreen = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [disciplinasResponse, notasResponse, alunoResponse] =
-          await Promise.all([
-            axios.get(API_DISCIPLINAS),
-            axios.get(API_NOTAS),
-            axios.get(API_ALUNO),
-          ]);
+        const alunoResponse = await axios.get(API_ALUNO);
+        setAluno(alunoResponse.data);
+      } catch (error) {
+        console.error("Erro ao carregar aluno", error);
+      }
+    };
+
+    fetchData();
+  }, [session]); // Executa somente quando a sessão estiver disponível
+
+  useEffect(() => {
+    if (!aluno) return; // Aguarda até que o aluno seja definido
+
+    const fetchDisciplinasENotas = async () => {
+      try {
+        const [disciplinasResponse, notasResponse] = await Promise.all([
+          axios.get(API_DISCIPLINAS),
+          axios.get(API_NOTAS),
+        ]);
 
         const disciplinasData = disciplinasResponse.data;
         const notasData = notasResponse.data.filter(
-          (item: Nota) => item.matricula === aluno?.matricula
+          (item: Nota) => item.matricula === aluno.matricula
         );
 
         setDisciplinas(disciplinasData);
         setNotas(notasData);
-        setAluno(alunoResponse.data);
 
         const resultado = notasData.map((nota: Nota) => {
           const disciplina = disciplinasData.find(
@@ -103,21 +115,22 @@ const HistoricoScreen = () => {
           );
           return {
             id: nota.disciplina,
-            nome: disciplina!.nome,
+            nome: disciplina?.nome || "Desconhecido",
             nota: nota.nota,
-            ch: disciplina!.ch,
+            ch: disciplina?.ch || "0h",
           };
         });
+
         setHistorico(resultado);
       } catch (error) {
-        console.error("Erro ao carregar dados", error);
+        console.error("Erro ao carregar disciplinas e notas", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [aluno]);
+    fetchDisciplinasENotas();
+  }, [aluno]); // Aguarda até que o aluno seja definido para buscar notas e disciplinas
 
   if (loading) {
     return (

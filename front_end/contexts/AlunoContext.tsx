@@ -1,4 +1,11 @@
-import React, { createContext, useState, ReactNode, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  ReactNode,
+  useContext,
+  useEffect,
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Definir o tipo para o aluno
 interface Aluno {
@@ -21,23 +28,41 @@ interface AlunoContextData {
 // Criar o Contexto com valor padrão
 const AlunoContext = createContext<AlunoContextData | undefined>(undefined);
 
-export const getSession = () => {
-  return JSON.parse(localStorage.getItem("session")!);
+export const getSession = async () => {
+  try {
+    const token = await AsyncStorage.getItem("session");
+    return token || ""; // Retorna uma string vazia se não houver token
+  } catch (error) {
+    console.log("Erro ao recuperar o token: ", error);
+    return "";
+  }
 };
 
-export const setSessionInLocalStorage = (token: string) => {
-  localStorage.setItem("session", JSON.stringify(token));
-  return true;
+export const setSessionInLocalStorage = async (token: string) => {
+  try {
+    await AsyncStorage.setItem("session", token);
+    return true;
+  } catch (error) {
+    console.log("Erro ao salvar token: ", error);
+  }
 };
 
 // Criar um Provider para envolver o aplicativo e fornecer o contexto
 export const AlunoProvider = ({ children }: { children: ReactNode }) => {
   const [aluno, setAluno] = useState<Aluno | null>(null);
-  const auth = getSession();
-  const [session, setSession] = useState(auth || "");
+  const [session, setSession] = useState<string>(""); // Agora session começa como string
+
+  // Carregar o token da sessão quando o componente for montado
+  useEffect(() => {
+    const loadSession = async () => {
+      const storedToken = await getSession();
+      setSession(storedToken);
+    };
+    loadSession();
+  }, []);
 
   const setAuth = (token: string): void => {
-    setSession(token);
+    setSession(token); // Agora aceita string corretamente
     setSessionInLocalStorage(token);
   };
 

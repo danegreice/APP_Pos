@@ -84,7 +84,7 @@ const IndexScreen = () => {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Entrar</Text>
       </TouchableOpacity>
-      {error != "" && <span style={styles.error}>{error}</span>}
+      {error != "" && <Text style={styles.error}>{error}</Text>}
     </View>
   );
 };
